@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VORTEX — Universal Video Downloader</title>
+    <meta name="description" content="VORTEX - Baixe vídeos de qualquer plataforma. YouTube, TikTok, Instagram e mais.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Interface de cores opacas integrada -->
+
+    <section class="hero">
+        <div class="container">
+            <header>
+                <div class="logo-mark">V</div>
+                <h1 class="logo-text">VORTEX</h1>
+                <p class="tagline">Qualquer vídeo. Qualquer plataforma. Um toque.</p>
+                <p class="metadata-clean-tag">Os vídeos instalados têm seus metadados e bancos de dados removidos</p>
+                <div class="platform-icons">
+                    <button class="pill active" onclick="selecionarTema('youtube')">
+                        <img src="youtube_logo.png" alt="" class="btn-logo-icon"> YouTube
+                    </button>
+                    <button class="pill" onclick="selecionarTema('tiktok')">
+                        <img src="tiktok_logo.avif" alt="" class="btn-logo-icon"> TikTok
+                    </button>
+                    <button class="pill" onclick="selecionarTema('instagram')">
+                        <img src="instagram_logo.png" alt="" class="btn-logo-icon"> Instagram
+                    </button>
+                </div>
+            </header>
+
+            <!-- Container de Elementos Flutuantes Dinâmicos -->
+            <div id="floatingContainer" class="floating-elements-container theme-youtube">
+                <!-- Elementos do YouTube -->
+                <div class="floating-el yt-tv">📺</div>
+                <div class="floating-el yt-play">▶</div>
+                <div class="floating-el yt-sub">SUBSCRIBE</div>
+                
+                <!-- Elementos do Instagram -->
+                <div class="floating-el ig-heart-1">❤️</div>
+                <div class="floating-el ig-heart-2">❤️</div>
+                <div class="floating-el ig-comment">💬</div>
+                <div class="floating-el ig-logo">📷</div>
+
+                <!-- Elementos do TikTok -->
+                <div class="floating-el tt-logo">🎵</div>
+                <div class="floating-el tt-foryou">For You</div>
+                <div class="floating-el tt-glitch-1"></div>
+                <div class="floating-el tt-glitch-2"></div>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="videoUrl" placeholder="Cole qualquer link de vídeo aqui..." autocomplete="off" spellcheck="false">
+                <button id="btnFetch" onclick="buscarVideo()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
+            </div>
+
+            <div id="loader" class="loader hidden">
+                <div class="loader-bar"></div>
+                <p>Analisando formatos disponíveis...</p>
+            </div>
+
+            <div id="errorMessage" class="error-msg hidden"></div>
+
+            <!-- Card de vídeo -->
+            <div id="videoCard" class="video-card hidden">
+                <div class="vc-top">
+                    <div class="vc-thumb-wrap">
+                        <img id="videoThumb" src="" alt="">
+                        <span id="platformBadge" class="vc-badge"></span>
+                    </div>
+                    <div class="vc-meta">
+                        <h2 id="videoTitle"></h2>
+                        <p id="videoAuthor" class="vc-author"></p>
+                        <p id="videoDuration" class="vc-dur"></p>
+                    </div>
+                </div>
+
+
+
+                 <!-- Ajustes Avançados do Vídeo (Redimensionamento e Corte) -->
+                 <div class="video-adjustments-panel">
+                     <!-- Redimensionamento para Shorts/Reels -->
+                     <div class="adjustment-group">
+                         <span class="adjust-label">📏 Redimensionamento do Vídeo</span>
+                         <div class="resize-options">
+                             <label class="resize-btn active" id="btnResizeNormal">
+                                 <input type="radio" name="videoResize" value="normal" checked onchange="updateResizeSelection('normal')">
+                                 Normal (Manter Original)
+                             </label>
+                             <label class="resize-btn" id="btnResizeShorts">
+                                 <input type="radio" name="videoResize" value="shorts" onchange="updateResizeSelection('shorts')">
+                                 Shorts (Vertical 9:16 Crop)
+                             </label>
+                         </div>
+                     </div>
+
+                     <!-- Corte de Intervalo de Tempo -->
+                     <div class="adjustment-group">
+                         <div class="trim-header">
+                             <span class="adjust-label">✂️ Cortar Intervalo (Opcional)</span>
+                             <span class="trim-val-label" id="trimTimeDisplay">Vídeo Completo</span>
+                         </div>
+                         <div class="range-slider-wrapper">
+                             <div class="range-control-row">
+                                 <label for="trimStartRange">Início:</label>
+                                 <input type="range" id="trimStartRange" min="0" max="100" value="0" oninput="atualizarRangeCorte()">
+                                 <span class="range-num-indicator" id="trimStartVal">0s</span>
+                             </div>
+                             <div class="range-control-row">
+                                 <label for="trimEndRange">Fim:</label>
+                                 <input type="range" id="trimEndRange" min="0" max="100" value="100" oninput="atualizarRangeCorte()">
+                                 <span class="range-num-indicator" id="trimEndVal">100s</span>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 <div class="vc-bottom">
+                    <div class="formats-grid" id="formatsGrid"></div>
+                    <button id="btnDownload" onclick="iniciarDownload()" class="btn-dl">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Baixar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Overlay de progresso -->
+    <div id="progressOverlay" class="progress-overlay hidden">
+        <div class="progress-card">
+            <!-- Botão de Fechar Rápido (X) no progresso -->
+            <button class="modal-x" style="top: 12px; right: 12px; width: 28px; height: 28px; font-size: 0.75rem;" onclick="minimizarProgresso()">✕</button>
+            
+            <div class="pc-header">
+                <div class="pc-ring-wrap">
+                    <svg class="pc-ring" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" class="pc-ring-bg"/>
+                        <circle cx="50" cy="50" r="45" class="pc-ring-fill" id="progressRing"/>
+                    </svg>
+                    <span class="pc-percent" id="progressPercent">0%</span>
+                </div>
+                <h3 id="progressTitle">Preparando...</h3>
+                <p id="progressStatus" class="pc-status">Iniciando download</p>
+            </div>
+
+            <div class="pc-stats">
+                <div class="pc-stat">
+                    <span class="pc-stat-val" id="progressSpeed">—</span>
+                    <span class="pc-stat-lbl">Velocidade</span>
+                </div>
+                <div class="pc-stat">
+                    <span class="pc-stat-val" id="progressSize">—</span>
+                    <span class="pc-stat-lbl">Tamanho</span>
+                </div>
+                <div class="pc-stat">
+                    <span class="pc-stat-val" id="progressEta">—</span>
+                    <span class="pc-stat-lbl">Restante</span>
+                </div>
+            </div>
+
+            <div id="progressDone" class="pc-done hidden">
+                <p class="pc-success-title">✓ Download concluído com sucesso</p>
+                <div class="social-generator">
+                    <div class="generator-header">
+                        <h4># Hashtags para Redes Sociais</h4>
+                        <button onclick="gerarNovasIdeias()" class="btn-refresh" title="Gerar novas hashtags">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            <span>Recriar</span>
+                        </button>
+                    </div>
+                    <div class="copy-box">
+                        <div class="copy-box-header"><span>Hashtags Recomendadas</span><button onclick="copiarTexto('suggestedTags')" class="btn-copy">Copiar</button></div>
+                        <p id="suggestedTags" class="copy-text tags"></p>
+                    </div>
+                </div>
+                <div class="pc-actions">
+                    <button onclick="salvarArquivo()" class="btn-save">Salvar no Celular</button>
+                    <button onclick="fecharProgresso()" class="btn-ghost">Fechar</button>
+                </div>
+            </div>
+            <div id="progressError" class="pc-error hidden">
+                <p id="progressErrorMsg">Erro ao baixar arquivo.</p>
+                <button onclick="fecharProgresso()" class="btn-ghost">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila de Downloads em Andamento (Downloads Ativos) -->
+    <section class="gallery-section active-downloads-section hidden" id="activeDownloadsContainer">
+        <div class="container">
+            <div class="gallery-head" style="border-bottom: 1px dashed rgba(255,255,255,0.15); padding-bottom: 8px;">
+                <div class="gh-left">
+                    <h2>Downloads Ativos</h2>
+                    <span class="gallery-count" id="activeDownloadsCount" style="color: var(--accent);">0 em andamento</span>
+                </div>
+            </div>
+            <div id="activeDownloadsList" class="active-downloads-list" style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+                <!-- Fila dinâmica injetada via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Biblioteca de Downloads Instalados (O VORTEX Downloader fica 100% focado aqui) -->
+    <section class="gallery-section" id="galleryContainer">
+        <div class="container">
+            <div class="gallery-head">
+                <div class="gh-left">
+                    <h2>Vídeos Salvos</h2>
+                    <span id="galleryCount" class="gallery-count">0 vídeos</span>
+                </div>
+            </div>
+            <div id="galleryList" class="gallery-list"></div>
+        </div>
+    </section>
+
+
+
+    <footer>
+        <p>VORTEX Mobile v1.0</p>
+    </footer>
+
+    <script>
+        let currentVideo = null;
+        let currentDownloadFileName = null;
+
+        // ==================== BUSCAR VÍDEO ====================
+        async function buscarVideo() {
+            const urlInput = document.getElementById('videoUrl').value.trim();
+            const loader = document.getElementById('loader');
+            const videoCard = document.getElementById('videoCard');
+            const errorBox = document.getElementById('errorMessage');
+
+            if (!urlInput) { showError("Cole um link de vídeo para começar."); return; }
+
+            errorBox.classList.add('hidden');
+            videoCard.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`/api/info?url=${encodeURIComponent(urlInput)}`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "Erro ao buscar informações.");
+
+                currentVideo = { ...data, url: urlInput };
+
+                document.getElementById('videoThumb').src = data.thumbnail;
+                document.getElementById('videoTitle').textContent = data.title;
+                document.getElementById('videoAuthor').textContent = data.author;
+
+                const badge = document.getElementById('platformBadge');
+                const pMap = { youtube: 'YT', tiktok: 'TT', instagram: 'IG', other: '—' };
+                badge.textContent = pMap[data.platform] || '—';
+
+                const min = Math.floor(data.duration / 60);
+                const sec = data.duration % 60;
+                document.getElementById('videoDuration').textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+
+                const grid = document.getElementById('formatsGrid');
+                grid.innerHTML = '';
+                
+                data.formats.forEach((f, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'format-chip' + (idx === 0 ? ' selected' : '');
+                    btn.dataset.value = f.format;
+                    btn.innerHTML = f.label;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.format-chip').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                    };
+                    grid.appendChild(btn);
+                });
+
+                loader.classList.add('hidden');
+                videoCard.classList.remove('hidden');
+                
+                // Configurar ranges de corte de tempo dinamicamente com base na duração do vídeo
+                const startRange = document.getElementById('trimStartRange');
+                const endRange = document.getElementById('trimEndRange');
+                
+                startRange.min = 0;
+                startRange.max = data.duration;
+                startRange.value = 0;
+                
+                endRange.min = 0;
+                endRange.max = data.duration;
+                endRange.value = data.duration;
+                
+                atualizarRangeCorte();
+
+            } catch (err) {
+                loader.classList.add('hidden');
+                showError(err.message);
+            }
+        }
+
+        // ==================== DOWNLOAD ====================
+        async function iniciarDownload() {
+            if (!currentVideo) return;
+            const selectedChip = document.querySelector('.format-chip.selected');
+            const format = selectedChip ? selectedChip.dataset.value : null;
+            if (!format) { showError("Selecione um formato primeiro."); return; }
+
+            const overlay = document.getElementById('progressOverlay');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('progressDone').classList.add('hidden');
+            document.getElementById('progressError').classList.add('hidden');
+            document.getElementById('progressTitle').textContent = currentVideo.title;
+            document.getElementById('progressStatus').textContent = 'Iniciando download';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressSpeed').textContent = '—';
+            document.getElementById('progressSize').textContent = '—';
+            document.getElementById('progressEta').textContent = '—';
+            setRingProgress(0);
+
+            // Payload do download
+            const payload = {
+                url: currentVideo.url,
+                format,
+                title: currentVideo.title,
+                thumbnail: currentVideo.thumbnail,
+                duration: currentVideo.duration,
+                author: currentVideo.author
+            };
+
+
+
+            // Adicionar opções avançadas de corte e redimensionamento
+            const resizeVal = document.querySelector('input[name="videoResize"]:checked').value;
+            payload.resize = resizeVal;
+
+            const startVal = parseFloat(document.getElementById('trimStartRange').value);
+            const endVal = parseFloat(document.getElementById('trimEndRange').value);
+            
+            // Só envia corte se o intervalo for diferente da duração completa original do vídeo
+            if (startVal > 0 || endVal < currentVideo.duration) {
+                payload.trim = {
+                    start: startVal,
+                    end: endVal
+                };
+            }
+
+            try {
+                const res = await fetch('/api/download/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error);
+                escutarProgresso(d.downloadId);
+            } catch (err) {
+                mostrarErroProgresso(err.message);
+            }
+        }
+
+        function setRingProgress(pct) {
+            const ring = document.getElementById('progressRing');
+            const circ = 2 * Math.PI * 45;
+            ring.style.strokeDashoffset = circ - (circ * pct / 100);
+        }
+
+        // ==================== MULTI-DOWNLOAD QUEUE SYSTEM & MINIMIZE ====================
+        let activeQueue = {};
+
+        function minimizarProgresso() {
+            document.getElementById('progressOverlay').classList.add('hidden');
+            document.body.style.overflow = '';
+            // Retorna suavemente ao topo sem pular a tela
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('videoUrl').value = '';
+            document.getElementById('videoCard').classList.add('hidden');
+        }
+
+        function renderizarFilaDownloads() {
+            const container = document.getElementById('activeDownloadsContainer');
+            const list = document.getElementById('activeDownloadsList');
+            const countLabel = document.getElementById('activeDownloadsCount');
+
+            const keys = Object.keys(activeQueue);
+            if (keys.length === 0) {
+                container.classList.add('hidden');
+                // Parar widget flutuante no celular se a fila estiver vazia
+                try { if (window.AndroidBridge) window.AndroidBridge.stopFloatingWidget(); } catch(e) {}
+                return;
+            }
+
+            container.classList.remove('hidden');
+            countLabel.textContent = `${keys.length} em andamento`;
+            list.innerHTML = '';
+
+            let progressSum = 0;
+
+            keys.forEach(id => {
+                const item = activeQueue[id];
+                const p = Math.min(item.progress || 0, 100);
+                progressSum += p;
+
+                const card = document.createElement('div');
+                card.className = 'g-item';
+                card.style.background = 'rgba(255, 255, 255, 0.04)';
+                card.style.border = '1px solid rgba(255,255,255,0.08)';
+                card.innerHTML = `
+                    <div class="g-thumb" style="width: 70px; min-width: 70px;">
+                        <img src="${item.thumbnail}" alt="">
+                        <div class="g-dur" style="background:var(--accent); color:#000; font-weight:700;">${p.toFixed(0)}%</div>
+                    </div>
+                    <div class="g-info">
+                        <h4 style="font-size:0.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.title)}</h4>
+                        <span class="g-sub" style="font-size:0.65rem;">${item.statusText || 'Iniciando'} · ${item.speed || '—'} · ${item.eta || '—'}</span>
+                    </div>
+                    <div class="g-actions" style="margin-left:auto;">
+                        <button onclick="cancelarDownloadFila('${id}')" class="btn-icon btn-icon-del" style="width:28px; height:28px; font-size:0.7rem;" title="Cancelar">✕</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            // Média de progresso da fila para o widget flutuante nativo do celular!
+            const avgProgress = Math.round(progressSum / keys.length);
+            try {
+                if (window.AndroidBridge) {
+                    window.AndroidBridge.updateFloatingWidget(avgProgress, keys.length);
+                }
+            } catch(e) {}
+        }
+
+        function cancelarDownloadFila(downloadId) {
+            if (activeQueue[downloadId]) {
+                if (activeQueue[downloadId].source) activeQueue[downloadId].source.close();
+                delete activeQueue[downloadId];
+                renderizarFilaDownloads();
+            }
+        }
+
+        function escutarProgresso(downloadId) {
+            const item = {
+                title: currentVideo.title,
+                thumbnail: currentVideo.thumbnail,
+                progress: 0,
+                statusText: 'Iniciando',
+                speed: '',
+                eta: '',
+                source: null
+            };
+
+            activeQueue[downloadId] = item;
+            renderizarFilaDownloads();
+
+            // Iniciar widget flutuante nativo do Android
+            try { if (window.AndroidBridge) window.AndroidBridge.startFloatingWidget(); } catch(e) {}
+
+            const src = new EventSource(`/api/download/progress/${downloadId}`);
+            item.source = src;
+
+            src.onmessage = (e) => {
+                const d = JSON.parse(e.data);
+                if (d.status === 'not_found') {
+                    src.close();
+                    delete activeQueue[downloadId];
+                    renderizarFilaDownloads();
+                    return;
+                }
+
+                const p = Math.min(d.progress || 0, 100);
+                item.progress = p;
+                item.speed = d.speed;
+                item.eta = d.eta;
+
+                const sMap = { 
+                    starting: 'Preparando...', 
+                    downloading: 'Baixando', 
+                    processing: 'Processando', 
+                    merging: 'Editando...' 
+                };
+                item.statusText = sMap[d.status] || 'Baixando';
+
+                // Se o modal de foco detalhado deste download estiver aberto, atualizar ele também
+                if (!document.getElementById('progressOverlay').classList.contains('hidden') && currentVideo.title === item.title) {
+                    document.getElementById('progressPercent').textContent = p.toFixed(0) + '%';
+                    setRingProgress(p);
+                    if (d.speed) document.getElementById('progressSpeed').textContent = d.speed;
+                    if (d.size) document.getElementById('progressSize').textContent = d.size;
+                    if (d.eta) document.getElementById('progressEta').textContent = d.eta;
+                    if (sMap[d.status]) document.getElementById('progressStatus').textContent = sMap[d.status];
+
+                    if (d.status === 'done') {
+                        currentDownloadFileName = d.fileName;
+                        document.getElementById('progressPercent').textContent = '100%';
+                        setRingProgress(100);
+                        document.getElementById('progressStatus').textContent = 'Concluído';
+                        document.getElementById('progressDone').classList.remove('hidden');
+                        gerarNovasIdeias();
+                    }
+                }
+
+                if (d.status === 'done') {
+                    src.close();
+                    delete activeQueue[downloadId];
+                    renderizarFilaDownloads();
+                    carregarGaleria();
+                }
+
+                if (d.status === 'error') {
+                    src.close();
+                    if (!document.getElementById('progressOverlay').classList.contains('hidden') && currentVideo.title === item.title) {
+                        mostrarErroProgresso(d.error || 'Erro desconhecido.');
+                    } else {
+                        alert(`Erro ao baixar: ${item.title}`);
+                    }
+                    delete activeQueue[downloadId];
+                    renderizarFilaDownloads();
+                }
+
+                renderizarFilaDownloads();
+            };
+
+            src.onerror = () => {
+                src.close();
+                delete activeQueue[downloadId];
+                renderizarFilaDownloads();
+            };
+        }
+
+        function salvarArquivo() {
+            if (currentDownloadFileName) {
+                window.location.href = `/api/download/file/${encodeURIComponent(currentDownloadFileName)}`;
+                document.body.style.overflow = '';
+            }
+        }
+        function fecharProgresso() { 
+            document.getElementById('progressOverlay').classList.add('hidden'); 
+            document.body.style.overflow = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('videoUrl').value = '';
+            document.getElementById('videoCard').classList.add('hidden');
+        }
+        function mostrarErroProgresso(msg) {
+            document.getElementById('progressStatus').textContent = 'Falha';
+            document.getElementById('progressErrorMsg').textContent = msg;
+            document.getElementById('progressError').classList.remove('hidden');
+        }
+        function showError(msg) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        // ==================== GALERIA ====================
+        async function carregarGaleria() {
+            try {
+                const res = await fetch('/api/gallery');
+                const gallery = await res.json();
+                renderGaleria(gallery);
+            } catch (e) {}
+        }
+
+        function renderGaleria(gallery) {
+            const list = document.getElementById('galleryList');
+            const count = document.getElementById('galleryCount');
+
+            if (!gallery.length) {
+                count.textContent = '0 vídeos';
+                list.innerHTML = '<p class="gallery-empty">Nenhum download ainda.</p>';
+                return;
+            }
+
+            count.textContent = `${gallery.length} vídeo${gallery.length > 1 ? 's' : ''}`;
+            list.innerHTML = '';
+
+            gallery.forEach((item, i) => {
+                const min = Math.floor(item.duration / 60);
+                const sec = item.duration % 60;
+                const dur = `${min}:${sec.toString().padStart(2, '0')}`;
+                const size = fmtSize(item.size);
+                const date = new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+
+                const el = document.createElement('div');
+                el.className = 'g-item';
+                el.style.animationDelay = `${i * 0.06}s`;
+                el.innerHTML = `
+                    <div class="g-thumb" onclick="reproduzir('${encodeURIComponent(item.fileName)}', ${item.isAudio})">
+                        <img src="${item.thumbnail}" alt="">
+                        <span class="g-dur">${dur}</span>
+                        <div class="g-play">▶</div>
+                    </div>
+                    <div class="g-info">
+                        <h4>${esc(item.title)}</h4>
+                        <span class="g-sub">${esc(item.author)} · ${size} · ${date}</span>
+                    </div>
+                    <div class="g-actions">
+                        <button onclick="window.location.href='/api/download/file/${encodeURIComponent(item.fileName)}'" class="btn-icon" title="Salvar">↓</button>
+                        <button onclick="remover(${i})" class="btn-icon btn-icon-del" title="Excluir">✕</button>
+                    </div>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        function reproduzir(fn, isAudio) {
+            const m = document.createElement('div');
+            m.className = 'modal';
+            m.onclick = (e) => { if (e.target === m) m.remove(); };
+            const tag = isAudio
+                ? `<audio controls autoplay src="/api/gallery/play/${fn}"></audio>`
+                : `<video controls autoplay src="/api/gallery/play/${fn}"></video>`;
+            m.innerHTML = `<div class="modal-inner" onclick="event.stopPropagation()"><button class="modal-x" onclick="this.closest('.modal').remove()">✕</button>${tag}</div>`;
+            document.body.appendChild(m);
+        }
+
+        async function remover(i) {
+            if (!confirm('Excluir este vídeo?')) return;
+            await fetch(`/api/gallery/${i}`, { method: 'DELETE' });
+            carregarGaleria();
+        }
+
+        function fmtSize(b) {
+            if (!b) return '—';
+            if (b < 1048576) return (b / 1024).toFixed(0) + ' KB';
+            if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB';
+            return (b / 1073741824).toFixed(2) + ' GB';
+        }
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        function gerarNovasIdeias() {
+            if (!currentVideo) return;
+            const title = (currentVideo.title || '').toLowerCase();
+            const author = (currentVideo.author || '').toLowerCase();
+
+            // Banco de temas com palavras-chave e hashtags específicas
+            const temas = [
+                { keywords: ['game', 'gaming', 'gameplay', 'forza', 'gta', 'minecraft', 'valorant', 'cod', 'warzone', 'pubg', 'apex', 'lol', 'league', 'roblox', 'fps', 'rpg', 'playstation', 'xbox', 'pc gamer', 'steam', 'epic', 'elden ring', 'zelda', 'mario', 'nintendo', 'horizon', 'assassin', 'resident evil', 'cyberpunk', 'dark souls', 'counter', 'cs2', 'csgo', 'overwatch', 'dota', 'free fire', 'battle royale'],
+                  tags: ['#gaming', '#gamer', '#gameplay', '#videogame', '#pcgaming', '#gamingcommunity', '#gaminglife', '#consolegaming', '#gameclips', '#epicmoments', '#gamingbr', '#jogos'] },
+                { keywords: ['carro', 'car', 'porsche', 'bmw', 'mercedes', 'ferrari', 'lamborghini', 'audi', 'drift', 'turbo', 'motor', 'racing', 'race', 'corrida', 'velocidade', 'speed', 'supercar', 'hypercar', 'mustang', 'toyota', 'supra', 'nissan', 'skyline', 'gtr', 'civic', 'honda', 'chevrolet', 'camaro', 'tesla', 'f1', 'formula', 'nascar', 'rally', 'offroad', 'truck', 'caminhão', 'moto', 'bike', 'motorcycle'],
+                  tags: ['#carros', '#cars', '#automotive', '#supercars', '#carlovers', '#luxurycars', '#carsofinstagram', '#drift', '#racing', '#speed', '#carporn', '#automovel'] },
+                { keywords: ['music', 'musica', 'música', 'song', 'beat', 'rap', 'trap', 'funk', 'sertanejo', 'rock', 'pop', 'hip hop', 'hiphop', 'reggae', 'eletronica', 'edm', 'remix', 'dj', 'bass', 'guitar', 'piano', 'vocal', 'lyric', 'album', 'single', 'spotify', 'phonk', 'lofi', 'jazz', 'blues', 'country', 'pagode', 'samba', 'mpb', 'kpop'],
+                  tags: ['#music', '#musica', '#song', '#newmusic', '#musicvideo', '#hiphop', '#rap', '#beats', '#producer', '#musiclife', '#musicbr', '#som'] },
+                { keywords: ['dance', 'dança', 'dançar', 'dancinha', 'coreografia', 'choreography', 'ballet', 'breaking', 'trend', 'tiktok dance'],
+                  tags: ['#dance', '#dança', '#coreografia', '#dancevideo', '#dancer', '#dancing', '#tiktokdance', '#choreography', '#dancetrend', '#moves', '#dancebr', '#dancechallenge'] },
+                { keywords: ['comida', 'food', 'receita', 'recipe', 'cooking', 'cozinha', 'chef', 'bolo', 'cake', 'pizza', 'hamburger', 'churrasco', 'bbq', 'sushi', 'restaurante', 'gourmet', 'fit', 'saudavel', 'dieta'],
+                  tags: ['#food', '#comida', '#receita', '#foodie', '#cooking', '#chef', '#gastronomia', '#foodlover', '#cozinha', '#delicious', '#foodporn', '#yummy'] },
+                { keywords: ['tech', 'tecnologia', 'iphone', 'samsung', 'android', 'apple', 'setup', 'pc', 'notebook', 'celular', 'smartphone', 'programação', 'coding', 'code', 'developer', 'software', 'hardware', 'gpu', 'cpu', 'intel', 'amd', 'nvidia', 'monitor', 'teclado', 'mouse', 'gadget', 'review', 'unboxing', 'ai', 'artificial'],
+                  tags: ['#tech', '#tecnologia', '#technology', '#gadgets', '#setup', '#pcsetup', '#smartphone', '#techreview', '#unboxing', '#inovação', '#techbr', '#futuro'] },
+                { keywords: ['treino', 'workout', 'gym', 'academia', 'fitness', 'musculação', 'crossfit', 'exercise', 'shape', 'bodybuilding', 'maromba', 'supino', 'agachamento', 'cardio', 'corrida', 'running', 'sport', 'esporte', 'futebol', 'soccer', 'basketball', 'basquete', 'ufc', 'mma', 'luta', 'fight', 'boxe'],
+                  tags: ['#fitness', '#gym', '#workout', '#treino', '#academia', '#fitnessmotivation', '#bodybuilding', '#health', '#exercise', '#gymlife', '#fitnesslife', '#esporte'] },
+                { keywords: ['maquiagem', 'makeup', 'beleza', 'beauty', 'skincare', 'cabelo', 'hair', 'nail', 'unha', 'moda', 'fashion', 'outfit', 'look', 'estilo', 'style', 'roupa', 'vestido', 'tênis', 'sneaker'],
+                  tags: ['#beauty', '#beleza', '#makeup', '#maquiagem', '#skincare', '#fashion', '#moda', '#style', '#estilo', '#beautycare', '#fashionista', '#look'] },
+                { keywords: ['viagem', 'travel', 'trip', 'praia', 'beach', 'natureza', 'nature', 'paisagem', 'landscape', 'montanha', 'mountain', 'aventura', 'adventure', 'camping', 'turismo', 'tourism', 'hotel', 'resort', 'paraíso', 'tropical'],
+                  tags: ['#travel', '#viagem', '#trip', '#natureza', '#nature', '#adventure', '#aventura', '#praia', '#beach', '#explore', '#wanderlust', '#turismo'] },
+                { keywords: ['anime', 'manga', 'otaku', 'naruto', 'one piece', 'dragon ball', 'attack on titan', 'demon slayer', 'jujutsu', 'bleach', 'my hero', 'cosplay', 'japan', 'japão'],
+                  tags: ['#anime', '#manga', '#otaku', '#animebr', '#animedit', '#animefan', '#japan', '#weeb', '#animeart', '#cosplay', '#animetiktok', '#animelover'] },
+                { keywords: ['humor', 'funny', 'meme', 'risada', 'comédia', 'comedy', 'piada', 'engraçado', 'prank', 'troll', 'zoeira', 'rir'],
+                  tags: ['#humor', '#funny', '#meme', '#comedy', '#risada', '#memesbr', '#engraçado', '#zoeira', '#comedia', '#prank', '#humorbrasil', '#rir'] },
+                { keywords: ['pet', 'cachorro', 'dog', 'gato', 'cat', 'puppy', 'kitten', 'animal', 'pets', 'filhote'],
+                  tags: ['#pets', '#dog', '#cat', '#cachorro', '#gato', '#petlovers', '#dogsofinstagram', '#catsofinstagram', '#animal', '#puppy', '#fofura', '#petsbr'] },
+                { keywords: ['edit', 'edits', 'cinematic', 'cinematography', 'vfx', 'after effects', 'premiere', 'capcut', 'transition', 'slow motion', 'slowmo', '4k', 'hdr', 'montage', 'compilação', 'compilation'],
+                  tags: ['#edit', '#edits', '#cinematic', '#videoediting', '#aftereffects', '#vfx', '#transition', '#4k', '#cinematography', '#editbr', '#capcut', '#montage'] }
+            ];
+
+            // Detectar temas do vídeo com base no título e autor
+            let tagsDetectadas = [];
+            let temasEncontrados = 0;
+
+            temas.forEach(tema => {
+                const match = tema.keywords.some(kw => title.includes(kw) || author.includes(kw));
+                if (match) {
+                    temasEncontrados++;
+                    // Pegar hashtags aleatórias deste tema (6-8 de cada)
+                    const shuffled = [...tema.tags].sort(() => Math.random() - 0.5);
+                    tagsDetectadas.push(...shuffled.slice(0, 6 + Math.floor(Math.random() * 3)));
+                }
+            });
+
+            // Hashtags virais genéricas que sempre entram
+            const genericas = [
+                '#viral', '#foryou', '#fyp', '#trending', '#foryoupage',
+                '#paravoce', '#explore', '#reels', '#shorts', '#tiktok',
+                '#tiktokbrasil', '#fy', '#viralvideo', '#trend', '#paginaparavoce',
+                '#brasil', '#conteudo', '#videosviral', '#xuxa', '#febre'
+            ];
+
+            // Se nenhum tema foi detectado, gerar tags baseadas nas palavras do título
+            if (temasEncontrados === 0) {
+                const palavras = title.split(/[\s\-_|:,.!?()]+/)
+                    .filter(w => w.length > 3)
+                    .map(w => '#' + w.replace(/[^a-zA-Z0-9àáâãéêíóôõúç]/g, ''))
+                    .filter(w => w.length > 2)
+                    .slice(0, 6);
+                tagsDetectadas.push(...palavras);
+            }
+
+            // Adicionar genéricas aleatórias
+            const shuffledGen = [...genericas].sort(() => Math.random() - 0.5);
+            tagsDetectadas.push(...shuffledGen.slice(0, 8));
+
+            // Remover duplicatas e limitar
+            const tagsUnicas = [...new Set(tagsDetectadas)].slice(0, 20);
+
+            document.getElementById('suggestedTags').textContent = tagsUnicas.join(' ');
+        }
+
+        function copiarTexto(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copiado!';
+                btn.style.background = '#ffffff';
+                btn.style.color = '#000000';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = 'transparent';
+                    btn.style.color = '#777777';
+                }, 1500);
+            }).catch(err => {
+                alert('Erro ao copiar: ' + err);
+            });
+        }
+
+        // ==================== CONTROLE DE TEMAS E INTERFACE DINÂMICA ====================
+        function selecionarTema(tema) {
+            const body = document.body;
+            const container = document.getElementById('floatingContainer');
+            const pills = document.querySelectorAll('.platform-icons .pill');
+
+            // Resetar classes de tema
+            body.className = '';
+            container.className = 'floating-elements-container';
+
+            // Remover classe active de todas as pills
+            pills.forEach(p => p.classList.remove('active'));
+
+            // Aplicar novo tema
+            if (tema === 'youtube') {
+                body.classList.add('theme-youtube');
+                container.classList.add('theme-youtube');
+                pills[0].classList.add('active');
+            } else if (tema === 'tiktok') {
+                body.classList.add('theme-tiktok');
+                container.classList.add('theme-tiktok');
+                pills[1].classList.add('active');
+            } else if (tema === 'instagram') {
+                body.classList.add('theme-instagram');
+                container.classList.add('theme-instagram');
+                pills[2].classList.add('active');
+            }
+        }
+
+        // Adicionar Efeito Paralaxe Cinemático no Fundo e Elementos Flutuantes
+        document.addEventListener('mousemove', (e) => {
+            const amountX = (window.innerWidth / 2 - e.clientX) * 0.015;
+            const amountY = (window.innerHeight / 2 - e.clientY) * 0.015;
+            
+            // Move os elementos flutuantes em direções ligeiramente diferentes para dar profundidade 3D
+            const els = document.querySelectorAll('.floating-el');
+            els.forEach((el, index) => {
+                const depth = (index % 3 + 1) * 0.5;
+                el.style.transform = `translate(${amountX * depth}px, ${amountY * depth}px) rotate(${index * 5 - 10}deg)`;
+            });
+
+            // Move sutilmente a posição do gradiente de fundo do body
+            if (document.body.classList.contains('theme-youtube')) {
+                document.body.style.backgroundPosition = `${50 + amountX * 0.8}% ${50 + amountY * 0.8}%`;
+            } else {
+                document.body.style.backgroundPosition = '';
+            }
+        });
+
+        // Efeito para celulares (Giroscópio simulado por Toque/Arrastar leve na tela)
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                const touch = e.touches[0];
+                const amountX = (window.innerWidth / 2 - touch.clientX) * 0.012;
+                const amountY = (window.innerHeight / 2 - touch.clientY) * 0.012;
+                
+                const els = document.querySelectorAll('.floating-el');
+                els.forEach((el, index) => {
+                    const depth = (index % 3 + 1) * 0.4;
+                    el.style.transform = `translate(${amountX * depth}px, ${amountY * depth}px) rotate(${index * 5 - 10}deg)`;
+                });
+            }
+        }, { passive: true });
+
+        // ==================== AJUSTES DE CORTE E REDIMENSIONAMENTO ====================
+        function updateResizeSelection(val) {
+            document.getElementById('btnResizeNormal').classList.remove('active');
+            document.getElementById('btnResizeShorts').classList.remove('active');
+            
+            if (val === 'shorts') {
+                document.getElementById('btnResizeShorts').classList.add('active');
+            } else {
+                document.getElementById('btnResizeNormal').classList.add('active');
+            }
+        }
+
+        function fmtDuration(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function atualizarRangeCorte() {
+            const startRange = document.getElementById('trimStartRange');
+            const endRange = document.getElementById('trimEndRange');
+            
+            let startVal = parseFloat(startRange.value);
+            let endVal = parseFloat(endRange.value);
+            
+            // Garantir colisão lógica de que início não pode ser maior que o fim
+            if (startVal >= endVal) {
+                startVal = Math.max(0, endVal - 1);
+                startRange.value = startVal;
+            }
+            
+            document.getElementById('trimStartVal').textContent = fmtDuration(startVal);
+            document.getElementById('trimEndVal').textContent = fmtDuration(endVal);
+            
+            const totalCorte = endVal - startVal;
+            if (currentVideo && totalCorte < currentVideo.duration) {
+                document.getElementById('trimTimeDisplay').innerHTML = `Cortar de <b style="color:#fff">${fmtDuration(startVal)}</b> até <b style="color:#fff">${fmtDuration(endVal)}</b> (${fmtDuration(totalCorte)})`;
+            } else {
+                document.getElementById('trimTimeDisplay').textContent = "Vídeo Completo";
+            }
+        }
+
+        // Enter para buscar
+        document.getElementById('videoUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscarVideo(); });
+
+        carregarGaleria();
+        // Inicializar com o tema youtube
+        selecionarTema('youtube');
+    </script>
+</body>
+</html>

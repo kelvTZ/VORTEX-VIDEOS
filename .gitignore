@@ -1,0 +1,16 @@
+# Ignorar arquivos locais pesados e binários
+node_modules/
+downloads/
+logos/
+ffmpeg/
+yt-dlp.exe
+gallery.json
+*.log
+vortex-app/
+1784319793401-player-script.js
+1784319793416-player-script.js
+scratch/
+.idea/
+.gradle/
+*.apk
+*.aab
