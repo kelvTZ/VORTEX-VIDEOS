@@ -11,9 +11,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const YT_DLP_PATH = path.join(__dirname, 'yt-dlp.exe');
-const FFMPEG_DIR = path.join(__dirname, 'ffmpeg');
-const FFMPEG_PATH = path.join(FFMPEG_DIR, 'ffmpeg.exe');
+// Caminhos híbridos (local Windows vs produção Linux)
+const isWindows = process.platform === 'win32';
+const YT_DLP_PATH = isWindows ? path.join(__dirname, 'yt-dlp.exe') : '/app/yt-dlp';
+const FFMPEG_PATH = isWindows ? path.join(__dirname, 'ffmpeg', 'ffmpeg.exe') : 'ffmpeg';
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 const LOGO_DIR = path.join(__dirname, 'logos');
 const GALLERY_FILE = path.join(__dirname, 'gallery.json');
@@ -62,16 +63,22 @@ function detectPlatform(url) {
 }
 
 function getCommonArgs(url) {
+    const isWindows = process.platform === 'win32';
     const args = [
         '--no-warnings',
         '--no-check-certificates',
         '--socket-timeout', '15',
         '--retries', '3',
-        '--cookies-from-browser', 'chrome',
         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
     ];
-    if (fs.existsSync(FFMPEG_DIR)) {
-        args.push('--ffmpeg-location', FFMPEG_DIR);
+    
+    // Cookies do Chrome apenas no ambiente Windows de testes locais
+    if (isWindows) {
+        args.push('--cookies-from-browser', 'chrome');
+        const localFfmpegDir = path.join(__dirname, 'ffmpeg');
+        if (fs.existsSync(localFfmpegDir)) {
+            args.push('--ffmpeg-location', localFfmpegDir);
+        }
     }
     return args;
 }
@@ -100,8 +107,12 @@ app.get('/api/info', async (req, res) => {
                     '--no-playlist',
                     videoUrl
                 ];
-                if (fs.existsSync(FFMPEG_DIR)) {
-                    fallbackArgs.push('--ffmpeg-location', FFMPEG_DIR);
+                const isWindows = process.platform === 'win32';
+                if (isWindows) {
+                    const localFfmpegDir = path.join(__dirname, 'ffmpeg');
+                    if (fs.existsSync(localFfmpegDir)) {
+                        fallbackArgs.push('--ffmpeg-location', localFfmpegDir);
+                    }
                 }
 
                 execFile(YT_DLP_PATH, fallbackArgs, { maxBuffer: 1024 * 1024 * 10, timeout: 45000 }, (fallbackError, fallbackStdout, fallbackStderr) => {
